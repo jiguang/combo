@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Combo工具 合并地址并生成时间戳文件</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+        /* 代码很烂的，就别看了 */
+        body{ font: 12px/1.5em \5FAE\8F6F\96C5\9ED1, "Microsoft YaHei"; color: #333;}
+        h1, h2, h3, input, textarea, ul{display: block; margin: 0; padding: 0; }
+        ul{ list-style: none;}
+        .clear { zoom: 1; }
+        .clear:after { content: ' '; display: block; clear: both; height: 0; visibility: hidden; }
+        body, .wrap{background-color: #333;}
+        .wrap{ padding: 10px;}
+        .wrap .main{float: left; margin-right: 15px;}
+        .wrap h1{font-size: 18px; padding: 10px 0; margin-bottom: 15px; clear: both; color: #f0f0f0;}
+        .code_wrap{position: relative;}
+        .code_wrap .edit_wrap{display: none; position: absolute; bottom: 7px; right: 12px; cursor: pointer; color: #666; overflow: hidden;}
+        .code_wrap .edit_wrap span, .code_wrap .edit_wrap a{ float: left; margin-left: 12px; color: #777; -webkit-user-select: none; text-decoration: none;}
+        #save_change{color: #9cf;}
+        .code_wrap .edit_wrap span:hover, .code_wrap .edit_wrap a:hover{color: #999; text-decoration: none;}
+
+        #code, .check_list_wrap, .opt_bar input, .opt_bar .btn, #tip, #updateList, .wrap .side{
+            border: 1px solid #666; background-color: #444; color: #ccc;
+            box-shadow: 0 0 1px 1px #000 inset;
+        }
+        #code, .check_list_wrap, .opt_bar input, .opt_bar .btn, #updateList{width: 795px; padding: 10px;}
+        #code{  height: 243px; margin-bottom: 15px; font-size: 12px;  font-family: "courier new"; resize: none;}
+        #code:disabled{ color: #999;}
+        
+        .check_list_wrap{display: none; margin-bottom: 10px; padding-top: 10px;}
+        .check_list_wrap ul{ list-style: none; padding-top: 5px;}
+        .check_list_wrap li{ line-height: 26px; margin-bottom: 4px; font: 12px "courier new";}
+        .check_list_wrap li label{display: block; width: 100%; cursor: pointer;}
+        .check_list_wrap li label a,
+        .check_list_wrap .image_list label a{ text-decoration: none;  margin-left: 10px; padding: 0 5px; font: 12px arial; border-radius: 1px; background-color: #555; color: #333; position: relative; top: 1px;}
+        .check_list_wrap li input{display: inline; vertical-align: -3px; margin-right: 5px; cursor: pointer;}
+
+        .check_list_wrap .file_list:hover .label_file,
+        .check_list_wrap h3 label,
+        #clearRecent:hover,
+        .recent_files li:hover,
+        .recent_files li.cur,
+        .check_list_wrap .file_list input:checked ~ span{color: #9cf;}
+
+        .check_list_wrap h3 label{display: inline; font-weight: normal; padding-left: 10px; font-size: 12px; cursor: pointer; -webkit-user-select:none;}
+        .check_list_wrap h3 label input{display: inline;  vertical-align: -2px; margin-right: 3px; cursor: pointer;}
+
+        /* 更新时附加样式 */
+        .add_style{padding: 10px;}
+        .add_style input{display: inline; width: 710px; padding: 0 5px; margin-right: 5px;}
+        .add_style button{cursor: pointer;}
+
+        .opt_bar{overflow: hidden; *zoom:1;}
+        .opt_bar input, .opt_bar .btn{ float: left; height: 24px; line-height: 24px; padding: 5px;}
+        .opt_bar input{ padding-left: 30px; width: 635px; margin-right: 13px;}
+        .opt_bar input:disabled{color: #999;}
+        .opt_bar .btn{width: 132px; height: 36px; line-height: 26px; background-color: #fb4040; border-color:#f52020; font-size: 20px; color: #fff; text-align: center; text-decoration: none;
+            -webkit-transition: opacity 0.2s ease-out;
+            transition: opacity 0.2s ease-out;
+            opacity: 1;
+            font-family: \5FAE\8F6F\96C5\9ED1, "Microsoft YaHei";
+            cursor: pointer;
+        }
+        .opt_bar .btn:disabled, .opt_bar .btn:disabled:hover{background-color: #444; border-color: #666; color: #999; cursor: default;}
+        .opt_bar .btn:hover{ opacity: 0.8;}
+        #tip{display: none; padding: 8px 10px; clear: both; margin-top: 15px; font-family: \5B8B\4F53, "宋体"; background-color: #000; color: #3c0;}
+        #tip a{ text-decoration: none; color: #ccc;}
+
+        .wrap .side_wrap{float: left;}
+        .wrap .side{padding: 2px; position: relative;}
+        .wrap .side h2{font-size: 14px; padding: 5px 10px;}
+        .wrap .side h2 b{ font-weight: normal; font-size: 12px; margin-left: 5px; color: #777; cursor: pointer;}
+        .wrap .side h2 b:hover{color: #9cf;}
+
+        .wrap .side .recent_wrap{width: 360px; min-height: 60px; max-height: 230px; overflow-y: scroll; position:relative;}
+        .recent_files{padding: 0 10px 10px; overflow: hidden;}
+        .recent_files li{width: 330px; cursor: pointer; padding-bottom: 5px; white-space: nowrap; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .recent_files li .del{ display: none; margin-left: 20px; }
+        .recent_files li:hover .del{display: inline; color: #777;}
+
+        @media screen and (max-width: 1250px){
+            .wrap .side_wrap{width: 816px; margin-top: 10px;}
+            .wrap .side .recent_wrap{width: 811px; max-height: 115px;}
+            .recent_files li{float: left; width: 380px;}
+            #code{height: 110px;}
+        }
+        .update_list_wrap{position: relative; overflow: hidden; margin-bottom: 10px;}
+        .update_list_wrap h3{ font-weight: normal; font-size: 12px; margin-bottom: 5px;}
+        .update_list_wrap .update_btn_wrap{position: absolute; bottom: 6px; right: 10px;}
+        .update_list_wrap .update_btn_wrap a{ text-decoration: none; color: #3c0; margin-left: 10px; }
+        #updateList{display: none; height: auto; resize: none; font: 12px "courier new"; background: #000; color: #3c0;}
+        .footer{clear: both; padding-top: 10px; padding-left: 10px;}
+        .footer a{ text-decoration: none; padding: 4px 7px; background-color: #444; color: #999; border-radius: 3px;
+            -webkit-transition: background-color 0.2s ease-out, color 0.2s ease-out;
+            transition: background-color 0.2s ease-out, color 0.2s ease-out;
+        }
+        .footer a:hover{color: #444; background-color: #999; text-decoration: none;}
+
+        /* 网购拍拍场景切换 */
+        .opt_bar{position: relative;}
+        .opt_bar .icon{display: block; width: 16px; height: 16px; position: absolute; top: 10px; left: 10px; background-image: url(icon.png); background-repeat: no-repeat; text-indent: -200%; overflow: hidden; outline: none;}
+
+        .opt_bar .pc{ background-position: 0 0;}
+        .opt_bar .h5{ background-position: -16px 0;}
+
+        .opt_bar .wx{ background-position: -32px 0;}
+        .opt_bar .fd{ background-position: -48px 0;}
+        .opt_bar .qq{ background-position: -64px 0;}
+
+        .opt_bar .dis{opacity: 0.3; filter:gray; -webkit-filter: grayscale(1); cursor: default;}
+
+        ::-webkit-input-placeholder{color: #666; }
+
+        /* 滚动条样式 */
+        .wrap .side .recent_wrap::-webkit-scrollbar-track{ -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); background-color: #F5F5F5; }
+        .wrap .side .recent_wrap::-webkit-scrollbar{ width: 12px; background-color: #F5F5F5; }
+        .wrap .side .recent_wrap::-webkit-scrollbar-thumb{ background-color: #F90; background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .2) 50%, rgba(255, 255, 255, .2) 75%, transparent 75%, transparent) }
+
+        /* 搜索框 */
+        #keyword{float: right; width: 100px; padding: 1px 4px; border: 1px solid #666; border-radius: 2px; background: #333; color: #ccc; font-size: 12px;}
+        #keyword::-webkit-search-cancel-button {-webkit-appearance: none;}
+        #keyword:focus{outline: none;}
+
+        #ssiFileText{ width: 600px;  color: #777; position: absolute; left: 12px; bottom: 7px; overflow: hidden; }
+        .line{ border-top: 1px solid #333; position: absolute; left:4px; right:4px; bottom: 30px;}
+
+        .check_list_wrap .image_list{ padding-left: 18px; }
+        .check_list_wrap .image_list label{ cursor: pointer; }
+        .check_list_wrap .image_list label:hover{color: #9cf;}
+    </style>
+    <script type="text/javascript" src="ZeroClipboard.js"></script>
+    <script type="text/javascript" src="jquery-1.8.3.min.js"></script>
+    <script type="text/javascript" src="jquery.storage.js"></script>
+    <script type="text/javascript" src="combo.js?t=2015112601"></script>
+</head>
+<body>
+<div class="wrap clear">
+    <!--<h1>Combo It !! -- CSS Combo 工具 ECD平台一组前端开发组</h1>-->
+
+    <div class="main">
+        <div class="code_wrap">
+            <textarea name="" id="code" cols="30" rows="10" placeholder='粘贴单条 <link> 代码至此，例如：
+&lt;link rel="stylesheet" href="//st.midea.com/h5/css/act/file_to_combo_1.css" /&gt;
+&lt;link rel="stylesheet" href="//st.midea.com/h5/css/act/file_to_combo_2.css" /&gt;
+' spellcheck="false"></textarea>
+
+            <div class="edit_wrap" id="edit_wrap">
+                <span class="edit_btn_wrap" style="display: none;">
+                    <span id="btnCloneLastLink" title="复制最后一个link">增加</span>
+                    <span id="btnRemoveLastLink" title="删除最后一个link">删除</span>
+                    <span id="save_change" title="保存更改到开发机">保存</span>
+                </span>
+                <span id="edit_mode" title="直接编辑Combo后的代码（慎用）">编辑</span>
+                <a id="test_combo" href="" target="_blank">测试</a>
+            </div>
+
+            <div id="ssiFileText"></div>
+            <div class="line"></div>
+        </div>
+
+        <div id="checkListWrap" class="check_list_wrap">
+            <h3>请选择需要更新的文件，选中的文件将被重新压缩
+                <label id="showImage" title="显示引用图片">显示引用图片</label>
+
+                <label style="display: none;" for="updateAll" title="更新全部包含所选样式的时间戳文件"><input type="checkbox" name="" id="updateAll">更新全部关联时间戳文件</label>
+                <label style="display: none;" for="checkAll" title="更新全部样式文件"><input type="checkbox" name="" id="checkAll">更新全部样式文件</label>
+            </h3>
+            <ul id="checkList"></ul>
+        </div>
+
+        <div class="update_list_wrap">
+            <div id="updateList" class="update_list">
+                <div id="fso_list"></div>
+            </div>
+            <div class="update_btn_wrap">
+                <a id="btn_copy_update_list" data-clipboard-target="fso_list" href="#" hidefocus="true">复制列表</a>
+                <a id="btn_fso_beta" href="" hidefocus="true">发布到 BETA</a>
+                <a id="btn_fso" href="" hidefocus="true">发布到 IDC</a>
+            </div>
+        </div>
+
+        <div class="opt_bar update">
+            <input id="fileName" class="input file_name" type="text" placeholder="请输入不带后缀的文件名，可以带目录，但要在开发机先建好目录">
+            <input id="filePath" class="input file_path" type="text" placeholder="这里会出现生成的时间戳地址" style="display: none;">
+            <button id="btn_create" class="btn btn_create" >创建文件</button>
+            <button id="btn_update" class="btn btn_update" style="display: none;">更新文件</button>
+            <button id="btn_copy" data-clipboard-target="filePath" class="btn btn_copy" style="display: none;">复制地址</button>
+            <a id="btn_switch" class="icon" href="#" hidefocus="true" title="点击切换场景">开发场景切换</a>
+        </div>
+    </div>
+
+    <div class="side_wrap">
+        <div class="side">
+            <h2 class="clear">近期操作文件列表
+                <span id="clearRecent"><b id="recentNum">0</b></span>
+                <input type="search" name="" id="keyword" placeholder="search">
+            </h2>
+
+            <div class="recent_wrap">
+                <ul id="rencentFiles" class="recent_files"></ul>
+            </div>
+        </div>
+
+        <div id="tip">木有提示 >_< </div>
+    </div>
+</div>
+
+<div class="footer">
+    <!--<a href="https://chrome.google.com/webstore/detail/ecd-combo-tool/nbeeeflcegcpghkncaedgplhdnompkgj?hl=zh-CN" target="_blank">Chrome 扩展下载</a>-->
+    <a href="https://chrome.google.com/webstore/detail/css-combo-tool/lakodbjhooonjlclcmjipfagodcolojm?hl=zh-CN" target="_blank">Chrome 扩展下载（Chrome 商店）</a>
+    &nbsp;
+    <a href="http://ppms.midea.com/combo/combo-extension-master/combo.crx" target="_blank">Chrome 扩展下载（本地源）</a>
+<!--    &nbsp;
+    <a href="http://km.oa.com/group/d9/docs/show/119560" target="_blank">使用教程</a>
+    &nbsp;
+    <a href="http://ppms.midea.com/php/eosFast.php?combo_tool=yes" target="_blank">快速发布</a>
+    &nbsp;
+    <a href="http://km.oa.com/group/d9" target="_blank">开发团队</a>
+    &nbsp;
+    <a href="http://jiguang.github.io/code-cleaner/" target="_blank">CodeCleaner</a>-->
+</div>
+</body>
+</html>
